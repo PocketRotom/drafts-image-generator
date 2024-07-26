@@ -7,12 +7,14 @@ const api = axios.create({
   baseURL: "https://discord.com/api/v10/"
 });
 
-async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team1Name, team2Name, team1Logo, team2Logo) {
+async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team1Name, team2Name, team1Logo, team2Logo, tera1, tera2) {
   let pokemonP1ids = await getAllPokemonID(pokemonP1);
   let pokemonP2ids = await getAllPokemonID(pokemonP2);
 
   let pokemonP1images = [];
   let pokemonP2images = [];
+  let pokemonP1Positions = [];
+  let pokemonP2Positions = [];
 
   for (const element of pokemonP1ids) {
     pokemonP1images.push('https://pocketrotom.pt/vods_test/' + element + '.png');
@@ -48,6 +50,7 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
     const height = image.height*0.80;
     const width = image.width*0.80;
     context.drawImage(image, x, y, height, width);
+    pokemonP1Positions.push({x: x, y: y});
     if (index % 2 == 0) {
       x += 150;
     } else {
@@ -64,6 +67,7 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
     const height = image.height*0.80;
     const width = image.width*0.80;
     context.drawImage(image, x, y, height, width);
+    pokemonP2Positions.push({x: x, y: y});
     if (index % 2 == 0) {
       x += 150;
     } else {
@@ -76,6 +80,7 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
   let caster2Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster2Info.data.id}/${caster2Info.data.avatar}.png?size=1024`);
   let team1LogoImage = await loadImage(team1Logo);
   let team2LogoImage = await loadImage(team2Logo);
+  
 
   context.drawImage(caster1Image, 730, 908, 128,128);
   context.drawImage(caster2Image, 1060, 908, 128,128);
@@ -120,6 +125,27 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
     context.fillText(team2Name.substring(searchIndex), 1300, 130)
   }
   
+  console.log(pokemonP1Positions);
+  let teraImage;
+
+  await loadImage("./assets/tera.png").then((image) => {
+    teraImage = image;
+  });
+
+  for (const element of tera1) {
+    let pokemonPosition = pokemonP1Positions[element - 1];
+    context.font = 'bold 30px Impact'
+    context.drawImage(teraImage, pokemonPosition.x + 80, pokemonPosition.y, 50, 50);
+  }
+
+  for (const element of tera2) {
+    let pokemonPosition = pokemonP2Positions[element - 1];
+    context.font = 'bold 30px Impact'
+    context.drawImage(teraImage, pokemonPosition.x + 80, pokemonPosition.y, 50, 50);
+  }
+
+  
+
 
 
 
