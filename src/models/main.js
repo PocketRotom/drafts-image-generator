@@ -16,6 +16,8 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
   let pokemonP1Positions = [];
   let pokemonP2Positions = [];
 
+  //Get URL for each pokemon image
+
   for (const element of pokemonP1ids) {
     pokemonP1images.push('https://pocketrotom.pt/vods_test/' + element + '.png');
   }
@@ -23,6 +25,8 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
   for (const element of pokemonP2ids) {
     pokemonP2images.push('https://pocketrotom.pt/vods_test/' + element + '.png');
   }
+
+  //Call to Discord API to get casters info
 
   let caster1Info = await api.get(`users/${caster1}`, {
     headers: {
@@ -39,9 +43,13 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
   const canvas = createCanvas(1920, 1080);
   const context = canvas.getContext("2d");
 
+  //Load background image
+
   await loadImage("./assets/model_bak.png").then((image) => {
     context.drawImage(image, 0, 0, 1920, 1080);
   });
+
+  //Load pokemon images for Player 1
 
   let x = 45;
   let y = 340;
@@ -58,6 +66,8 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
       y += 110;
     }
   }
+
+  //Load pokemon images for Player 2
 
   x = 1620;
   y = 340;
@@ -76,6 +86,8 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
     }
   }
 
+  //Load Casters and Team images
+
   let caster1Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster1Info.data.id}/${caster1Info.data.avatar}.png?size=1024`);
   let caster2Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster2Info.data.id}/${caster2Info.data.avatar}.png?size=1024`);
   let team1LogoImage = await loadImage(team1Logo);
@@ -85,10 +97,14 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
   context.drawImage(caster1Image, 730, 908, 128,128);
   context.drawImage(caster2Image, 1060, 908, 128,128);
 
+  //Resize team logos
+
   let ratioCalc = 300 / team1LogoImage.width;
   context.drawImage(team1LogoImage, 30, 30, 300, team1LogoImage.height * ratioCalc);
   ratioCalc = 300 / team2LogoImage.width;
   context.drawImage(team2LogoImage, 1590, 30, 300, team2LogoImage.height * ratioCalc);
+
+  //Casters Names and Round
 
   context.font = 'bold 30px Impact'
   context.textAlign = 'right'
@@ -104,6 +120,8 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
 
   context.font = 'bold 50px Impact'
   context.textAlign = 'right'
+
+  //Team 1 and Team 2 Names
 
   if (team1Name.length < 20) {
     context.fillText(team1Name, 900, 100)
@@ -125,7 +143,8 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
     context.fillText(team2Name.substring(searchIndex), 1300, 130)
   }
   
-  console.log(pokemonP1Positions);
+
+  //Load Tera Images on respective Pokémon
   let teraImage;
 
   await loadImage("./assets/tera.png").then((image) => {
@@ -143,11 +162,6 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
     context.font = 'bold 30px Impact'
     context.drawImage(teraImage, pokemonPosition.x + 80, pokemonPosition.y, 50, 50);
   }
-
-  
-
-
-
 
   const buffer = canvas.toBuffer("image/png");
   fs.writeFileSync("./out.png", buffer);
