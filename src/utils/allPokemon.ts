@@ -1,6 +1,5 @@
 import { Pokemon } from "../types/pokemon";
-
-const {connectDatabase} = require('./database');
+import { connectDatabase } from './database';
 
 let allPokemon: Pokemon[] = [];
 

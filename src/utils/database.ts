@@ -1,13 +1,14 @@
+import knex from "knex";
 export async function connectDatabase () {
 	try {
-		const knex = require('knex')({
+		const knexInstance = knex({
 			client: 'mysql2',
 			connection: {
 				host: process.env.MYSQL_HOST,
 				user: process.env.MYSQL_USER,
 				password: process.env.MYSQL_PASSWORD,
 				database: process.env.MYSQL_DB,
-				port: process.env.MYSQL_PORT
+				port: Number(process.env.MYSQL_PORT)
 			},
 			acquireConnectionTimeout: 10000,
 			pool: {
@@ -25,7 +26,7 @@ export async function connectDatabase () {
 				}
 			}
 		});
-		return knex;
+		return knexInstance;
 
 	} catch (err: any) {
 		console.log(`Error: ${err.message}`);

@@ -1,6 +1,6 @@
 import { Pokemon } from "../types/pokemon";
 
-import { createCanvas, Image, loadImage } from 'canvas';
+import { Canvas, createCanvas, Image, loadImage, CanvasRenderingContext2D } from 'canvas';
 import fs from 'fs';
 import { connectDatabase } from '../utils/database';
 import axios from 'axios';
@@ -12,14 +12,31 @@ const api = axios.create({
 	baseURL: 'https://discord.com/api/v10/'
 });
 
-export async function generateImage(pokemonP1: string[], pokemonP2: string[], caster1: string, caster2: string, round: string, team1Name: string, team2Name: string, team1Logo: string, team2Logo: string, tera1: number[], tera2: number[]) {
-	let pokemonP1ids = await getAllPokemonID(pokemonP1);
-	let pokemonP2ids = await getAllPokemonID(pokemonP2);
+export async function generateImage(
+	pokemonP1: string[],
+	pokemonP2: string[],
+	caster1: string,
+	caster2: string,
+	round: string,
+	team1Name: string,
+	team2Name: string,
+	team1Logo: string,
+	team2Logo: string,
+	tera1: number[],
+	tera2: number[]
+): Promise<string> {
+	//Get all pokemon IDs
+	let pokemonP1ids: number[] = [];
+	let pokemonP2ids: number[] = [];
 
-	let pokemonP1images = [];
-	let pokemonP2images = [];
-	let pokemonP1Positions = [];
-	let pokemonP2Positions = [];
+		pokemonP1ids = await getAllPokemonID(pokemonP1);
+		pokemonP2ids = await getAllPokemonID(pokemonP2);
+
+
+	let pokemonP1images: string[] = [];
+	let pokemonP2images: string[] = [];
+	let pokemonP1Positions: {x: number, y: number}[] = [];
+	let pokemonP2Positions: {x: number, y: number}[] = [];
 
 	//Get URL for each pokemon image
 
@@ -52,8 +69,8 @@ export async function generateImage(pokemonP1: string[], pokemonP2: string[], ca
 
 	caster2Info = temp.data;
 
-	const canvas = createCanvas(1920, 1080);
-	const context = canvas.getContext('2d');
+	const canvas: Canvas = createCanvas(1920, 1080);
+	const context: CanvasRenderingContext2D = canvas.getContext('2d');
 
 	//Load background image
 
@@ -99,13 +116,23 @@ export async function generateImage(pokemonP1: string[], pokemonP2: string[], ca
 	}
 
 	//Load Casters and Team images
-	console.log(team1Logo);
 	
-	let caster1Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster1Info.id}/${caster1Info.avatar}.png?size=1024`);
-	let caster2Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster2Info.id}/${caster2Info.avatar}.png?size=1024`);
-	let team1LogoImage = await loadImage(team1Logo);
-	let team2LogoImage = await loadImage(team2Logo);
-  
+	let caster1Image: Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster1Info.id}/${caster1Info.avatar}.png?size=1024`);
+	let caster2Image: Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster2Info.id}/${caster2Info.avatar}.png?size=1024`);
+	let team1LogoImage: Image;
+	let team2LogoImage: Image;
+	try {
+		team1LogoImage = await loadImage(team1Logo);
+	} catch (error) {
+		throw new Error('Team Logo 1 failed to load, please check if URL still exists');
+	}
+	try {
+		team2LogoImage = await loadImage(team2Logo);
+	} catch (error) {
+		throw new Error('Team Logo 1 failed to load, please check if URL still exists');
+	}
+	
+	
 
 	context.drawImage(caster1Image, 730, 908, 128,128);
 	context.drawImage(caster2Image, 1060, 908, 128,128);
@@ -159,15 +186,7 @@ export async function generateImage(pokemonP1: string[], pokemonP2: string[], ca
   
 
 	//Load Tera Images on respective Pokémon
-	let teraImage: Image | undefined;
-
-	await loadImage('./assets/tera.png').then((image: Image) => {
-		teraImage = image;
-	});
-
-	if (teraImage === undefined) {
-		throw new Error('Tera image not loaded');
-	}
+	let teraImage: Image = await loadImage('./assets/tera.png');
 
 	for (const element of tera1) {
 		let pokemonPosition = pokemonP1Positions[element - 1];
@@ -187,21 +206,40 @@ export async function generateImage(pokemonP1: string[], pokemonP2: string[], ca
 	return 'out.png';
 }
 
-async function getAllPokemonID(pokemonArray: string[]) {
-	let pokemonIDs = [];
-	for (const element of pokemonArray) {
+async function getAllPokemonID(pokemonArray: string[]): Promise<number[]> {
+	let pokemonIDs: number[] = [];
+	for (const [index, element] of pokemonArray.entries()) {
 		const knex = await connectDatabase();
-		const result = await knex('pokemon').select('id').where('name', element);
-		knex.destroy();
+		let result: any;
+		try {
+			result = await knex('pokemon').select('id').where('name', element);
+		} catch (error) {
+			console.log("ERROR: " + error);
+			throw new Error('Pokémon Number ' + (index + 1) + ' not found, please check spelling');
+		}
+	
 		if (result.length > 0) {
 			pokemonIDs.push(result[0].id);
+		} else {
+			let correctName = await getCorrectName(element);
+			const result = await knex('pokemon').select('id').where('name', correctName)
+			if (result.length > 0){
+				pokemonIDs.push(result[0].id);
+			}
 		}
+		knex.destroy();
 	}
 	return pokemonIDs;
 }
 
-export async function teste(pokemonName: string){
+export async function teste(pokemonName: string): Promise<string[]> {
 	const arrayOfNames = getAllPokemon().map((obj: Pokemon) => obj.name);
-	let temp = difflib.getCloseMatches(pokemonName, arrayOfNames);
+	let temp = difflib.getCloseMatches(pokemonName, arrayOfNames, 3, 0.7);
 	return temp;
+}
+
+export async function getCorrectName(pokemonName: string): Promise<string>{
+	const arrayOfNames = getAllPokemon().map((obj: Pokemon) => obj.name);
+	let temp = difflib.getCloseMatches(pokemonName, arrayOfNames, 3, 0.7);
+	return temp[0];
 }

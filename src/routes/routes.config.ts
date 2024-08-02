@@ -1,6 +1,6 @@
 import express from 'express';
-const router = express.Router();
 import { generateImageRes, testeRes } from '../controllers/main';
+const router = express.Router();
 
 router.get('/generateImage', generateImageRes);
 router.get('/teste', testeRes);
