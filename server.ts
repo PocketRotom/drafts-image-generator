@@ -1,13 +1,13 @@
-const dotenv = require('dotenv');
-const express = require('express');
-const morgan = require('morgan');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const {initializeConfig} = require('./src/utils/allPokemon');
+import dotenv from "dotenv";
+import express, { Express } from "express";
+import morgan from "morgan";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { initializeConfig } from "./src/utils/allPokemon";
 
 dotenv.config();
 
-const app = express();
+const app: Express = express();
 app.use(express.text());
 app.use(express.json());
 app.use(bodyParser.json());

@@ -1,15 +1,18 @@
-const { createCanvas, loadImage } = require('canvas');
-const fs = require('fs');
-const {connectDatabase} = require('../utils/database');
-const axios = require('axios');
-const difflib = require('difflib');
-const {getAllPokemon} = require('../utils/allPokemon');
+import { Pokemon } from "../types/pokemon";
+
+import { createCanvas, Image, loadImage } from 'canvas';
+import fs from 'fs';
+import { connectDatabase } from '../utils/database';
+import axios from 'axios';
+import difflib from 'difflib';
+import { getAllPokemon } from '../utils/allPokemon';
+import { DiscordUser } from "../types/discord";
 
 const api = axios.create({
 	baseURL: 'https://discord.com/api/v10/'
 });
 
-async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team1Name, team2Name, team1Logo, team2Logo, tera1, tera2) {
+export async function generateImage(pokemonP1: string[], pokemonP2: string[], caster1: string, caster2: string, round: string, team1Name: string, team2Name: string, team1Logo: string, team2Logo: string, tera1: number[], tera2: number[]) {
 	let pokemonP1ids = await getAllPokemonID(pokemonP1);
 	let pokemonP2ids = await getAllPokemonID(pokemonP2);
 
@@ -30,17 +33,24 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
 
 	//Call to Discord API to get casters info
 
-	let caster1Info = await api.get(`users/${caster1}`, {
+	let caster1Info: DiscordUser;
+
+	let temp = await api.get(`users/${caster1}`, {
+		headers: {
+			'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
+		}
+	});
+	caster1Info = temp.data;
+
+	let caster2Info: DiscordUser;
+
+	temp = await api.get(`users/${caster2}`, {
 		headers: {
 			'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
 		}
 	});
 
-	let caster2Info = await api.get(`users/${caster2}`, {
-		headers: {
-			'Authorization': `Bot ${process.env.DISCORD_TOKEN}`
-		}
-	});
+	caster2Info = temp.data;
 
 	const canvas = createCanvas(1920, 1080);
 	const context = canvas.getContext('2d');
@@ -89,15 +99,17 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
 	}
 
 	//Load Casters and Team images
-
-	let caster1Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster1Info.data.id}/${caster1Info.data.avatar}.png?size=1024`);
-	let caster2Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster2Info.data.id}/${caster2Info.data.avatar}.png?size=1024`);
+	console.log(team1Logo);
+	
+	let caster1Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster1Info.id}/${caster1Info.avatar}.png?size=1024`);
+	let caster2Image = await loadImage(`https://cdn.discordapp.com/avatars/${caster2Info.id}/${caster2Info.avatar}.png?size=1024`);
 	let team1LogoImage = await loadImage(team1Logo);
 	let team2LogoImage = await loadImage(team2Logo);
   
 
 	context.drawImage(caster1Image, 730, 908, 128,128);
 	context.drawImage(caster2Image, 1060, 908, 128,128);
+
 
 	//Resize team logos
 
@@ -111,10 +123,10 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
 	context.font = 'bold 30px Impact';
 	context.textAlign = 'right';
 	context.fillStyle = '#e32966';
-	context.fillText(caster1Info.data.global_name, 720, 975);
+	context.fillText(caster1Info.global_name, 720, 975);
 
 	context.textAlign = 'left';
-	context.fillText(caster2Info.data.global_name, 1200, 975);
+	context.fillText(caster2Info.global_name, 1200, 975);
 
 	context.font = 'bold 40px Impact';
 	context.fillStyle = '#595ba9';
@@ -147,11 +159,15 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
   
 
 	//Load Tera Images on respective Pokémon
-	let teraImage;
+	let teraImage: Image | undefined;
 
-	await loadImage('./assets/tera.png').then((image) => {
+	await loadImage('./assets/tera.png').then((image: Image) => {
 		teraImage = image;
 	});
+
+	if (teraImage === undefined) {
+		throw new Error('Tera image not loaded');
+	}
 
 	for (const element of tera1) {
 		let pokemonPosition = pokemonP1Positions[element - 1];
@@ -171,7 +187,7 @@ async function generateImage(pokemonP1, pokemonP2, caster1, caster2, round, team
 	return 'out.png';
 }
 
-async function getAllPokemonID(pokemonArray) {
+async function getAllPokemonID(pokemonArray: string[]) {
 	let pokemonIDs = [];
 	for (const element of pokemonArray) {
 		const knex = await connectDatabase();
@@ -184,13 +200,8 @@ async function getAllPokemonID(pokemonArray) {
 	return pokemonIDs;
 }
 
-async function teste(pokemonName){
-	const arrayOfNames = getAllPokemon().map(obj => obj.name);
+export async function teste(pokemonName: string){
+	const arrayOfNames = getAllPokemon().map((obj: Pokemon) => obj.name);
 	let temp = difflib.getCloseMatches(pokemonName, arrayOfNames);
 	return temp;
 }
-
-module.exports = {
-	generateImage,
-	teste
-};

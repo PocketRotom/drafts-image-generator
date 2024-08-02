@@ -1,7 +1,8 @@
+import { Pokemon } from "../types/pokemon";
 
 const {connectDatabase} = require('./database');
 
-let allPokemon = [];
+let allPokemon: Pokemon[] = [];
 
 async function getAllPokemonDB(){
 	const knex = await connectDatabase();
@@ -10,16 +11,11 @@ async function getAllPokemonDB(){
 	return allPokemonDB;
 }
 
-
-async function initializeConfig() {
+export async function initializeConfig() {
 	allPokemon = await getAllPokemonDB();
 }
 
-function getAllPokemon(){
+export function getAllPokemon(){
 	return allPokemon;
 }
 
-module.exports = {
-	getAllPokemon,
-	initializeConfig
-};
