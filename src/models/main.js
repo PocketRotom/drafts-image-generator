@@ -2,6 +2,8 @@ const { createCanvas, loadImage } = require('canvas');
 const fs = require('fs');
 const {connectDatabase} = require('../utils/database');
 const axios = require('axios');
+const difflib = require('difflib');
+const {getAllPokemon} = require('../utils/allPokemon');
 
 const api = axios.create({
 	baseURL: 'https://discord.com/api/v10/'
@@ -182,6 +184,13 @@ async function getAllPokemonID(pokemonArray) {
 	return pokemonIDs;
 }
 
+async function teste(pokemonName){
+	const arrayOfNames = getAllPokemon().map(obj => obj.name);
+	let temp = difflib.getCloseMatches(pokemonName, arrayOfNames);
+	return temp;
+}
+
 module.exports = {
 	generateImage,
+	teste
 };

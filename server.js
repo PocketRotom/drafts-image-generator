@@ -3,6 +3,7 @@ const express = require('express');
 const morgan = require('morgan');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const {initializeConfig} = require('./src/utils/allPokemon');
 
 dotenv.config();
 
@@ -17,12 +18,16 @@ if (process.env.NODE_ENV === 'development') {
 
 const routes = require('./src/routes/routes.config');
 
-
-
 app.use(cors({origin: '*'}));
 app.use('/', routes);
 
 const port = process.env.PORT || 3001;
-app.listen(port, () => {
-	console.log('Server is running on port ' + port + '.');
-});
+
+async function startServer() {
+	await initializeConfig();
+	app.listen(port, () => {
+		console.log('Server is running on port ' + port + '.');
+	});
+}
+
+startServer();
